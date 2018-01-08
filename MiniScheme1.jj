@@ -1,0 +1,143 @@
+
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  static = true;
+} 
+
+PARSER_BEGIN(MiniScheme1) 
+import java.io.*;
+public class MiniScheme1
+{
+  public static void main(String args []) throws ParseException, FileNotFoundException
+  {
+	MiniScheme1 parser = new MiniScheme1(new FileInputStream(args[0]));
+	Exp exp = MiniScheme1.program();
+	exp.eval(new Env ());
+  }
+}
+
+PARSER_END(MiniScheme1)
+
+SKIP :
+{
+  " " | "\r" | "\t" | "\n"
+}
+
+TOKEN :
+{
+	< SEMI : ";" >
+|   < PLUS : "+" >
+|   < MINUS : "-" >
+|   < TIMES : "*" >
+|   < QUOTIENT : "/" >
+|   < LPAREN : "(" >
+|   < RPAREN : ")" >
+| 	< INTEGER : ( "+" | "-" )? ( <DIGIT> )+ >
+|   < DIGIT : ["0"-"9"] >
+| 	< NEWLINE: "newline" >
+| 	< READ: "read" >
+| 	< WRITE: "write" >
+| 	< DEFINE: "define" >
+| 	< SET: "set!" >
+| 	< LET: "let" >
+| 	< INITIAL: ["a"-"z"]"!""$""%""&""*""/"":""<""="">""?""^""_""~">
+}
+
+Token getToken() :
+{}
+{
+
+( < SEMI >
+|   < PLUS >
+|   < MINUS>
+|   < TIMES>
+|   < QUOTIENT>
+|   < LPAREN>
+|   < RPAREN> )
+{
+  return token;
+}
+}
+Exp program():
+{Exp exp1 = null;}
+{
+ (exp1 = expression())
+ {return exp1;}
+}
+
+//****
+Exp defintion():{Exp exp1 = null, exp2 = null;}{ < DEFINE > exp1 = variable() exp2 = expression(){exp1 = new Define (exp1, exp2);} {return exp1;}}
+
+Exp variable() :
+{Exp exp1 = null;}
+{
+	exp1 = identifier()
+	{return exp1;}
+}
+
+Exp identifier():{Exp exp1 = null;}{ (exp1 = initial() (subsequent())*) {return exp1;}}
+
+Exp initial():
+{Exp exp1 = null;}
+{
+ < INITIAL >
+ {return exp1;}
+}
+
+Exp subsequent():
+{Exp exp1 = null;}
+{
+ (< INITIAL > | < DIGIT >| "+"|"-"|"."|"@")
+ {return exp1;}
+}
+
+ Exp expression():{Exp exp1 = null;}{ (exp1 = variable()| exp1 = literal()
+ | exp1 = assignment()| exp1 = defined_expression())
+ {return exp1;}}Exp literal() :{Exp exp1 = null;}{	exp1 = integer()
+	{return exp1;}}
+
+Exp integer() :{Exp i = null;}{	< INTEGER > {String t = token.image.replaceAll("//+", ""); i = new Int(Integer.parseInt(t));}
+	{return i;}}
+
+//***
+Exp body() :
+{Exp exp1 = null;}
+{
+	exp1 = integer()
+	{return exp1;}
+}
+
+Exp assignment() :
+{Exp exp1 = null;}
+{
+	< SET > exp1 = variable() exp2 = expression() {exp1 = new Define (exp1, exp2);}
+ {return exp1;}
+}
+
+Exp defined_expression():
+{Exp exp1 = null, exp2 = null; Token t = null;}
+{
+  < LPAREN >
+  (
+   < READ > {exp1 = new ReadExp ();}
+  |< WRITE > exp1 = expression() {exp1 = new WriteExp (exp1);}
+  |< NEWLINE > {exp1 = new NewLine();}
+  |< LET > exp1 = binding_spec() exp2 = body()
+  |< TIMES > {t = token;} exp1 = expression() exp2 = expression() {exp1 = new ArithExp (t.image, exp1, exp2);}
+  |< QUOTIENT > {t = token;} exp1 = expression() exp2 = expression() {exp1 = new ArithExp (t.image, exp1, exp2);}
+  |< PLUS > {t = token;} exp1 = expression() exp2 = expression() {exp1 = new ArithExp (t.image, exp1, exp2);}
+  |< MINUS > {t = token;} exp1 = expression() exp2 = expression() {exp1 = new ArithExp (t.image, exp1, exp2);}
+	)
+	< RPAREN >
+  {return exp1;}
+}
+
+Exp binding_spec() :
+{Exp exp1 = null;}
+{
+	exp1 = integer()
+	{return exp1;}
+}

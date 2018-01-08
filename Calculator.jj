@@ -1,0 +1,117 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  static = true;
+}
+
+PARSER_BEGIN(Calculator)
+import java.io.*;
+
+public class Calculator 
+{
+  public static void main(String args []) throws ParseException, FileNotFoundException
+  {
+    Calculator parser = new Calculator(new FileInputStream(args[0]));
+//    while (true)
+//    {
+//      System.out.println("Reading from standard input...");
+//      System.out.print("Enter an expression like \"1+(2+3)*4;\" :");
+//   }
+	Exp exp = Calculator.sum();
+	exp.print();
+	System.out.println();
+	ValEnv ve = exp.eval(new Env ());
+	System.out.printf ("answer = %d\n ", (Integer) ve.val);
+  }
+}
+
+PARSER_END(Calculator)
+
+SKIP :
+{
+  " " | "\r" | "\t" | "\n"
+}
+
+TOKEN :
+{
+	< SEMI : ";" >
+|   < PLUS : "+" >
+|   < MINUS : "-" >
+|   < TIMES : "*" >
+|   < DIVIDE : "/" >
+|   < LPAREN : "(" >
+|   < RPAREN : ")" >
+|   < CONSTANT : "0" | (["1"-"9"] (< DIGIT >)*) >
+|   < DIGIT : ["0"-"9"] >
+}
+
+Token getToken() :
+{}
+{
+
+( < SEMI >
+|   < PLUS >
+|   < MINUS>
+|   < TIMES>
+|   < DIVIDE>
+|   < LPAREN>
+|   < RPAREN>
+|   < CONSTANT> )
+{
+  return token;
+}
+}
+//int one_line() :
+//{int i = 0;}
+//{
+//  i = sum() ";"
+//  {
+//    System.out.println(i);
+//    return 0;
+//  }
+//| ";"
+//  {
+//    return 1;
+//  }
+//}
+
+Exp sum() :
+{Exp exp1 = null, exp2 = null; Token t = null;}
+{
+	((< PLUS > | < MINUS >) {t = token;} exp1 = term() 
+					exp2 = term() {exp1 = new ArithExp (t.image, exp1, exp2);})*
+	{return exp1;}
+
+}
+
+Exp term() :
+{Exp exp1 = null, exp2 = null; Token t = null;}
+{
+	exp1 = unary() ((< TIMES > | < DIVIDE >) {t = token;}
+					exp2 = unary() {exp1 = new ArithExp (t.image, exp1, exp2);})*
+	{return exp1;}
+
+}
+
+Exp unary() :
+{Exp exp1 = null;}
+{
+  (< CONSTANT > {exp1 = new Int(Integer.parseInt(token.image));}
+
+| exp1 = element(){return exp1;})
+{return exp1;}
+}
+
+
+Exp element() :
+{Exp exp1 = null;}
+{
+ (< CONSTANT > exp1=element(){return new ArithExp ("-", new Int(0), exp1);}
+| "(" exp1 = sum() ")")
+{return exp1;}
+
+}
+
+    
